@@ -192,7 +192,7 @@ Verify your connection profile paths and that the Fabric network is running.
 
 1. Update the package name in `package.json` (use your npm scope):
    ```json
-   "name": "@your-scope/fabric-mcp-server"
+   "name": "@adityajoshi12/fabric-mcp-server"
    ```
 
 2. Build and publish:
@@ -207,7 +207,7 @@ Verify your connection profile paths and that the Fabric network is running.
 Once published, users can install globally:
 
 ```bash
-npm install -g @your-scope/fabric-mcp-server
+npm install -g @adityajoshi12/fabric-mcp-server
 ```
 
 Then configure Claude Desktop:
@@ -237,7 +237,7 @@ Then configure Claude Desktop:
   "mcpServers": {
     "hyperledger-fabric": {
       "command": "npx",
-      "args": ["-y", "@your-scope/fabric-mcp-server"],
+      "args": ["-y", "@adityajoshi12/fabric-mcp-server"],
       "env": {
         "FABRIC_CHANNEL": "mychannel",
         "FABRIC_CHAINCODE": "basic",
@@ -249,44 +249,6 @@ Then configure Claude Desktop:
     }
   }
 }
-```
-
-### Local Distribution (tar.gz)
-
-Create a distributable package:
-
-```bash
-npm run build
-npm pack
-```
-
-This creates `fabric-mcp-server-1.0.0.tgz` which can be shared and installed:
-
-```bash
-npm install -g ./fabric-mcp-server-1.0.0.tgz
-```
-
-### Docker Distribution
-
-Create a `Dockerfile`:
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-ENTRYPOINT ["node", "dist/app.js"]
-```
-
-Build and run:
-
-```bash
-docker build -t fabric-mcp-server .
-docker run -e FABRIC_CHANNEL=mychannel \
-  -v /path/to/wallet:/app/wallet \
-  -v /path/to/connection-profile.json:/app/connection-profile.json \
-  fabric-mcp-server
 ```
 
 ## License
