@@ -1,0 +1,52 @@
+{
+  "name": "@adityajoshi12/fabric-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for interacting with Hyperledger Fabric blockchain networks",
+  "main": "dist/app.js",
+  "bin": {
+    "fabric-mcp-server": "dist/app.js"
+  },
+  "files": [
+    "dist",
+    "env.template",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "tsc && node dist/app.js",
+    "create-wallet": "npx ts-node create-wallet.ts",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hyperledger",
+    "fabric",
+    "blockchain",
+    "ai",
+    "claude"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adityajoshi12/fabric-mcp-server.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "dotenv": "^17.2.3",
+    "fabric-ca-client": "^2.2.20",
+    "fabric-network": "^2.2.20"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
