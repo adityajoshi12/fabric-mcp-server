@@ -2,6 +2,7 @@
 import "dotenv/config";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -9,6 +10,9 @@ import {
 import { Gateway, Wallets, X509Identity } from "fabric-network";
 import * as path from "path";
 import * as fs from "fs";
+import { randomUUID } from "crypto";
+import express, { Request, Response } from "express";
+import cors from "cors";
 
 interface FabricConfig {
   channelName: string;
@@ -327,10 +331,72 @@ class FabricMCPServer {
     };
   }
 
-  async run() {
+  async runStdio() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error("Hyperledger Fabric MCP server running on stdio");
+  }
+
+  async runHttp(port: number = 3000) {
+    const app = express();
+    const transports = new Map<string, StreamableHTTPServerTransport>();
+
+    // Middleware
+    app.use(cors({
+      exposedHeaders: ["mcp-session-id"],
+    }));
+
+    // Health check endpoint
+    app.get("/health", (_req: Request, res: Response) => {
+      res.json({ 
+        status: "ok", 
+        mode: "http",
+        activeSessions: transports.size 
+      });
+    });
+
+    // MCP endpoint - handles all MCP protocol requests
+    // Use express.json() only for this route and pass parsed body to transport
+    app.all("/mcp", express.json(), async (req: Request, res: Response) => {
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      let transport: StreamableHTTPServerTransport;
+
+      if (sessionId && transports.has(sessionId)) {
+        // Reuse existing transport for this session
+        transport = transports.get(sessionId)!;
+      } else if (!sessionId && req.method === "POST") {
+        // New session - create transport
+        transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          onsessioninitialized: (id) => {
+            transports.set(id, transport);
+            console.error(`Session initialized: ${id}`);
+          },
+          onsessionclosed: (id) => {
+            transports.delete(id);
+            console.error(`Session closed: ${id}`);
+          },
+        });
+
+        // Connect to the MCP server
+        await this.server.connect(transport);
+      } else {
+        res.status(400).json({ error: "Invalid session or request" });
+        return;
+      }
+
+      // Handle the request - pass parsed body to avoid stream consumption issue
+      await transport.handleRequest(req, res, req.body);
+    });
+
+    // Start server
+    app.listen(port, () => {
+      console.error(`Hyperledger Fabric MCP server running on http://localhost:${port}`);
+      console.error(`  MCP endpoint: http://localhost:${port}/mcp`);
+      console.error(`  Health check: http://localhost:${port}/health`);
+    });
+
+    return app;
   }
 
   async cleanup() {
@@ -340,6 +406,12 @@ class FabricMCPServer {
   }
 }
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+const mode = process.env.MCP_TRANSPORT || (args.includes("--http") || args.includes("--sse") ? "http" : "stdio");
+const portArg = args.find(arg => arg.startsWith("--port="));
+const port = portArg ? parseInt(portArg.split("=")[1]) : parseInt(process.env.MCP_PORT || "3000");
+
 const server = new FabricMCPServer();
 
 process.on("SIGINT", async () => {
@@ -347,4 +419,8 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-server.run().catch(console.error);
+if (mode === "http" || mode === "sse") {
+  server.runHttp(port).catch(console.error);
+} else {
+  server.runStdio().catch(console.error);
+}

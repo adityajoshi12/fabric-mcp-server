@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server that enables AI assistants to interact wit
 - **Get Blockchain Info** - Get network statistics (block height, hashes)
 - **Get Transaction History** - View history for specific assets
 - **List Enrolled Identities** - View wallet identities
+- **Multiple Transport Modes** - Supports both stdio and HTTP/SSE (for web clients)
 
 ## Prerequisites
 
@@ -37,12 +38,17 @@ cp env.template .env
 Edit `.env` with your settings:
 
 ```env
+# Fabric Network Configuration
 FABRIC_CHANNEL=mychannel
 FABRIC_CHAINCODE=basic
 FABRIC_MSP_ID=Org1MSP
 FABRIC_WALLET_PATH=./wallet
 FABRIC_CONNECTION_PROFILE=./connection-profile.json
 FABRIC_USER_ID=appUser
+
+# Transport Configuration (optional)
+MCP_TRANSPORT=stdio    # "stdio" or "http"
+MCP_PORT=3000          # HTTP port (only used when MCP_TRANSPORT=http)
 ```
 
 ### Option 2: Claude Desktop Config
@@ -53,8 +59,8 @@ Add environment variables directly in `claude_desktop_config.json`:
 {
   "mcpServers": {
     "hyperledger-fabric": {
-      "command": "node",
-      "args": ["/path/to/fabric-mcp-server/dist/app.js"],
+      "command": "npx",
+      "args": ["-y", "@adityajoshi12/fabric-mcp-server"],
       "env": {
         "FABRIC_CHANNEL": "mychannel",
         "FABRIC_CHAINCODE": "basic",
@@ -86,6 +92,8 @@ npm run create-wallet
 
 ## Build & Run
 
+### Stdio Mode (Default)
+
 ```bash
 # Build TypeScript
 npm run build
@@ -95,6 +103,14 @@ npm start
 
 # Or build and run together
 npm run dev
+```
+
+### HTTP Mode (for Web Clients)
+
+Run the MCP server as an HTTP server with SSE support:
+
+```bash
+MCP_TRANSPORT=http MCP_PORT=8080 npm start
 ```
 
 ## Available Tools
@@ -186,31 +202,34 @@ Ensure you've run `npm run build` and the path in config is absolute.
 ### Connection errors
 Verify your connection profile paths and that the Fabric network is running.
 
-## Distribution
+## Usage
 
-### Publishing to npm
 
-1. Update the package name in `package.json` (use your npm scope):
-   ```json
-   "name": "@adityajoshi12/fabric-mcp-server"
-   ```
+### Using npx (without installing)
 
-2. Build and publish:
-   ```bash
-   npm run build
-   npm login
-   npm publish --access public
-   ```
+```json
+{
+  "mcpServers": {
+    "hyperledger-fabric": {
+      "command": "npx",
+      "args": ["-y", "@adityajoshi12/fabric-mcp-server"],
+      "env": {
+        "FABRIC_CHANNEL": "mychannel",
+        "FABRIC_CHAINCODE": "basic",
+        "FABRIC_MSP_ID": "Org1MSP",
+        "FABRIC_WALLET_PATH": "/path/to/wallet",
+        "FABRIC_CONNECTION_PROFILE": "/path/to/connection-profile.json",
+        "FABRIC_USER_ID": "appUser"
+      }
+    }
+  }
+}
+```
 
-### Installing from npm
-
-Once published, users can install globally:
-
+### Installing locally
 ```bash
 npm install -g @adityajoshi12/fabric-mcp-server
 ```
-
-Then configure Claude Desktop:
 
 ```json
 {
@@ -230,22 +249,13 @@ Then configure Claude Desktop:
 }
 ```
 
-### Using npx (without installing)
+### Using SSE
 
 ```json
 {
   "mcpServers": {
     "hyperledger-fabric": {
-      "command": "npx",
-      "args": ["-y", "@adityajoshi12/fabric-mcp-server"],
-      "env": {
-        "FABRIC_CHANNEL": "mychannel",
-        "FABRIC_CHAINCODE": "basic",
-        "FABRIC_MSP_ID": "Org1MSP",
-        "FABRIC_WALLET_PATH": "/path/to/wallet",
-        "FABRIC_CONNECTION_PROFILE": "/path/to/connection-profile.json",
-        "FABRIC_USER_ID": "appUser"
-      }
+      "url": "http://localhost:3000/mcp",
     }
   }
 }
