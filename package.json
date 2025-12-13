@@ -1,6 +1,6 @@
 {
   "name": "fabric-mcp-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for interacting with Hyperledger Fabric blockchain networks",
   "main": "dist/index.js",
   "bin": {
