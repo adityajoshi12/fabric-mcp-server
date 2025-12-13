@@ -212,7 +212,7 @@ Verify your connection profile paths and that the Fabric network is running.
   "mcpServers": {
     "hyperledger-fabric": {
       "command": "npx",
-      "args": ["-y", "@adityajoshi12/fabric-mcp-server"],
+      "args": ["-y", "fabric-mcp-server"],
       "env": {
         "FABRIC_CHANNEL": "mychannel",
         "FABRIC_CHAINCODE": "basic",
@@ -228,7 +228,7 @@ Verify your connection profile paths and that the Fabric network is running.
 
 ### Installing locally
 ```bash
-npm install -g @adityajoshi12/fabric-mcp-server
+npm install -g fabric-mcp-server
 ```
 
 ```json
