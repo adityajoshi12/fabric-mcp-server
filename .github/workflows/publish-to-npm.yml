@@ -23,6 +23,4 @@ jobs:
         run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build --if-present
-      - name: Set version from tag
-        run: npm version ${GITHUB_REF_NAME#v}
       - run: npm publish
