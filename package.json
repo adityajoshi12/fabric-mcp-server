@@ -2,9 +2,9 @@
   "name": "fabric-mcp-server",
   "version": "1.0.2",
   "description": "MCP server for interacting with Hyperledger Fabric blockchain networks",
-  "main": "dist/app.js",
+  "main": "dist/index.js",
   "bin": {
-    "fabric-mcp-server": "dist/app.js"
+    "fabric-mcp-server": "dist/index.js"
   },
   "files": [
     "dist",
@@ -13,10 +13,10 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/app.js",
-    "start:http": "node dist/app.js --http",
-    "dev": "tsc && node dist/app.js",
-    "dev:http": "tsc && node dist/app.js --http",
+    "start": "node dist/index.js",
+    "start:http": "node dist/index.js --http",
+    "dev": "tsc && node dist/index.js",
+    "dev:http": "tsc && node dist/index.js --http",
     "create-wallet": "npx ts-node create-wallet.ts",
     "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"

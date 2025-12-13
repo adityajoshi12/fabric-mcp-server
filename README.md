@@ -10,6 +10,9 @@ A Model Context Protocol (MCP) server that enables AI assistants to interact wit
 - **Get Blockchain Info** - Get network statistics (block height, hashes)
 - **Get Transaction History** - View history for specific assets
 - **List Enrolled Identities** - View wallet identities
+- **Chaincode Lifecycle Management** - Query installed, approved, and committed chaincodes
+- **Commit Readiness Check** - Verify chaincode definitions before committing
+- **Channel Management** - List channels and get channel information
 - **Multiple Transport Modes** - Supports both stdio and HTTP/SSE (for web clients)
 
 ## Prerequisites
@@ -162,6 +165,42 @@ List all identities in the wallet.
 
 **Parameters:** None
 
+### 7. `get_installed_chaincodes`
+Get list of chaincodes installed on the peer.
+
+**Parameters:** None
+
+### 8. `get_approved_chaincode`
+Get the approved chaincode definition for an organization.
+
+**Parameters:**
+- `chaincodeName` (string): The name of the chaincode
+
+### 9. `get_committed_chaincode`
+Get the committed chaincode definition on the channel.
+
+**Parameters:**
+- `chaincodeName` (string): The name of the chaincode
+
+### 10. `check_commit_readiness`
+Check if a chaincode definition is ready to be committed.
+
+**Parameters:**
+- `chaincodeName` (string): The name of the chaincode
+- `sequence` (number): The sequence number of the chaincode definition
+- `version` (string): The version of the chaincode
+
+### 11. `list_channels`
+List all channels the peer has joined.
+
+**Parameters:** None
+
+### 12. `get_channel_info`
+Get information about a specific channel.
+
+**Parameters:**
+- `channelName` (string): The name of the channel
+
 ## Example Usage with AI Assistant
 
 ```
@@ -176,6 +215,18 @@ List all identities in the wallet.
 
 "Show me block 10"
 → Uses get_block_info with blockNumber 10
+
+"What chaincodes are installed?"
+→ Uses get_installed_chaincodes
+
+"Is the 'basic' chaincode committed?"
+→ Uses get_committed_chaincode with chaincodeName "basic"
+
+"List all channels"
+→ Uses list_channels
+
+"Check commit readiness for chaincode 'mycc' version 1.0"
+→ Uses check_commit_readiness
 ```
 
 ## Project Structure
