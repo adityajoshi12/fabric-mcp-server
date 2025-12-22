@@ -1,62 +1,83 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import express, { Request, Response, Express } from "express";
-import cors from "cors";
-import { randomUUID } from "crypto";
+import type { Request, Response, Express } from "express";
 
-export async function runHttpTransport(server: Server, port: number = 3000): Promise<Express> {
-  const app = express();
-  const transports = new Map<string, StreamableHTTPServerTransport>();
+export async function runHttpTransport(
+  serverFactory: () => McpServer,
+  port: number = 3000
+): Promise<Express> {
+  const app = createMcpExpressApp();
 
-  // Middleware
-  app.use(cors({
-    exposedHeaders: ["mcp-session-id"],
-  }));
 
-  // Health check endpoint
   app.get("/health", (_req: Request, res: Response) => {
     res.json({
       status: "ok",
       mode: "http",
-      activeSessions: transports.size,
     });
   });
 
-  // MCP endpoint - handles all MCP protocol requests
-  app.all("/mcp", express.json(), async (req: Request, res: Response) => {
-    const sessionId = req.headers["mcp-session-id"] as string | undefined;
-    let transport: StreamableHTTPServerTransport;
-
-    if (sessionId && transports.has(sessionId)) {
-      // Reuse existing transport for this session
-      transport = transports.get(sessionId)!;
-    } else if (!sessionId && req.method === "POST") {
-      // New session - create transport
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (id) => {
-          transports.set(id, transport);
-          console.error(`Session initialized: ${id}`);
-        },
-        onsessionclosed: (id) => {
-          transports.delete(id);
-          console.error(`Session closed: ${id}`);
-        },
+  app.post("/mcp", async (req: Request, res: Response) => {
+    const server = serverFactory();
+    try {
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // Stateless mode
       });
-
-      // Connect to the MCP server
       await server.connect(transport);
-    } else {
-      res.status(400).json({ error: "Invalid session or request" });
-      return;
+      await transport.handleRequest(req, res, req.body);
+      res.on("close", () => {
+        console.error("Request closed");
+        transport.close();
+        server.close();
+      });
+    } catch (error) {
+      console.error("Error handling MCP request:", error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: "Internal server error",
+          },
+          id: null,
+        });
+      }
     }
-
-    // Handle the request - pass parsed body to avoid stream consumption issue
-    await transport.handleRequest(req, res, req.body);
   });
 
-  // Start server
-  app.listen(port, () => {
+  app.get("/mcp", async (_req: Request, res: Response) => {
+    console.error("Received GET MCP request");
+    res.writeHead(405).end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Method not allowed.",
+        },
+        id: null,
+      })
+    );
+  });
+
+  app.delete("/mcp", async (_req: Request, res: Response) => {
+    console.error("Received DELETE MCP request");
+    res.writeHead(405).end(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Method not allowed.",
+        },
+        id: null,
+      })
+    );
+  });
+
+  app.listen(port, (error?: Error) => {
+    if (error) {
+      console.error("Failed to start server:", error);
+      process.exit(1);
+    }
     console.error(`Hyperledger Fabric MCP server running on http://localhost:${port}`);
     console.error(`  MCP endpoint: http://localhost:${port}/mcp`);
     console.error(`  Health check: http://localhost:${port}/health`);
@@ -64,4 +85,3 @@ export async function runHttpTransport(server: Server, port: number = 3000): Pro
 
   return app;
 }
-
