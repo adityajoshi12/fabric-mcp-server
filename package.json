@@ -34,7 +34,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/adityajoshi12/fabric-mcp-server.git"
+    "url": "git+https://github.com/adityajoshi12/fabric-mcp-server.git"
   },
   "engines": {
     "node": ">=18.0.0"
